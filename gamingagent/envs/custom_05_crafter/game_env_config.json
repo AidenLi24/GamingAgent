@@ -1,0 +1,22 @@
+{
+  "env_init_kwargs": {
+
+  },
+  "action_mapping": {
+    "noop":         0,
+    "forward":      1,
+    "backward":     2,
+    "left":         3,
+    "right":        4,
+    "jump":         5,
+    "mine":         6,
+    "craft":        7,
+    "attack":       8,
+    "turn_left":    9,
+    "turn_right":  10  },
+
+
+  "tile_size_for_render": 32,
+
+  "render_mode_for_make": "rgb_array"
+}
