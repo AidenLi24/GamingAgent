@@ -1,17 +1,27 @@
 import os
-import time
 import random
+import time
+
 import numpy as np
-import matplotlib.pyplot as plt
 from gamingagent.envs.custom_05_crafter.crafterEnv import CrafterEnvWrapper
-# Basic config
+import pygame
+from PIL import Image
+
+# -------------------------------
+# Basic config values
+# -------------------------------
 game_name = "crafter"
 obs_mode = "vision"
 cache_dir = "cache/crafter/test_run"
 script_dir = os.path.dirname(os.path.abspath(__file__))
-game_config_path = os.path.abspath(os.path.join(script_dir, "../gamingagent/envs/custom_05_crafter/game_env_config.json"))
+game_config_path = os.path.abspath(
+    os.path.join(script_dir, "../gamingagent/envs/custom_05_crafter/game_env_config.json")
+)
+
+# Create the adapter log directory
 os.makedirs(cache_dir, exist_ok=True)
-# Instantiate environment
+
+# Instantiate environment manually
 env = CrafterEnvWrapper(
     game_name_for_adapter=game_name,
     observation_mode_for_adapter=obs_mode,
@@ -19,30 +29,50 @@ env = CrafterEnvWrapper(
     game_specific_config_path_for_adapter=game_config_path,
     max_stuck_steps_for_adapter=20,
 )
-# Reset environment
+
+# -------------------------------
+# Pygame Setup
+# -------------------------------
+pygame.init()
+window_size = (512, 512)  # Resize to something comfortable
+screen = pygame.display.set_mode(window_size)
+pygame.display.set_caption("Crafter Pygame Rendering")
+env.env._size = np.array((512,512), dtype=np.int32)
+
+# -------------------------------
+# Run test episode
+# -------------------------------
 episode_id = 1
 obs, info = env.reset(seed=42, episode_id=episode_id)
-# Random actions for testing
-actions = ["left", "right", "up", "down", "do"]
+
 total_reward = 0
-plt.ion()  # Interactive mode ON for live updating
-for step in range(200):
-    action = random.choice(actions)
+
+for step in range(250):
+    # Choose random action (cardinal + "do")
+    action = random.choice(["left", "right", "up", "down", "do"])
     obs, reward, terminated, truncated, info, perf_score = env.step(action)
     total_reward += reward
-    # Render the frame visually
-    frame = env.render((64, 64))
-    plt.imshow(frame)
-    #plt.axis("off")
-    plt.title(f"Step: {step}, Action: {action}, Reward: {reward:.2f}")
-    plt.pause(0.1)
-    plt.clf()
+
+    # ✅ Directly fetch raw RGB from underlying Crafter env
+    raw_frame = env.env.render()
+
+    # Convert to Pygame surface
+    img = Image.fromarray(raw_frame, "RGB").resize(window_size)
+    img_surface = pygame.image.fromstring(img.tobytes(), img.size, img.mode)
+    screen.blit(img_surface, (0, 0))
+    pygame.display.flip()
+    time.sleep(0.05)
+
+    # Basic event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+
     if terminated or truncated:
         break
-plt.ioff()  # Turn off interactive mode
-plt.show()
+
+pygame.quit()
 env.close()
-print(f"Episode finished. Total Reward: {total_reward}")
-
-
+print(f"Episode finished. Total reward: {total_reward}")
 
